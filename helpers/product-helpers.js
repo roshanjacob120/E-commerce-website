@@ -1,6 +1,7 @@
 var db = require("../config/connection");
 const collection = require("../config/collection");
-var mongodb=require('mongodb').ObjectID
+var mongodb=require('mongodb').ObjectID;
+const { ObjectID } = require("bson");
 module.exports={
     addproduct:(product,callback)=>{
         db.get().collection('product').insertOne(product).then((data)=>{
@@ -20,5 +21,26 @@ module.exports={
             })
 
     })
-}
+},
+    getProduct:(proId)=>{
+        return new Promise((resolve,reject)=>{
+            db.get().collection(collection.PRODUCT_COLLECTIONS).findOne({_id:mongodb(proId)}).then((response)=>{
+                resolve(response)
+            })
+        })
+    },
+    updateProduct:(proId,proDetails)=>{
+        return new Promise((resolve,reject)=>{
+            db.get().collection(collection.PRODUCT_COLLECTIONS).updateOne({_id:ObjectID(proId)},{
+                $set:{
+                Name:proDetails.Name,
+                Description:proDetails.Description,
+                Price:proDetails.Price,
+                Category:proDetails.Category
+            } 
+        }).then((response)=>{
+            resolve()
+        })
+        })
+    }
 }

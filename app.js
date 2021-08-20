@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({secret:"key",cookie:{maxAge:600000}}))
 app.use(fileUpload())
 db.connect((err)=>{
-  if(err)
+  if(err) 
   console.log('database error'+err)
   else
   console.log('Database connected to port 27017')

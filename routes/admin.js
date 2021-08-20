@@ -23,6 +23,7 @@ router.post('/add-products',function(req,res){
       else{
         console.log(err)
       }
+      
     })
   })
 })

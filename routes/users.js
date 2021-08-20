@@ -17,7 +17,6 @@ const verifyLogin=(req,res,next)=>{
 router.get('/', function(req, res, next) {
   producthelpers.getAllProducts().then((products)=>{
     let user=req.session.user
-    console.log(user)
    res.render('user/view-products',{admin:false,products,user})
   })
 });
@@ -36,9 +35,13 @@ router.get('/signup',(req,res)=>{
 router.post('/signup',(req,res)=>{
   userHelpers.dosignup(req.body).then((response)=>{
     console.log(response)
+    req.session.loggedIn=true
+    req.session.user=response
+    res.redirect('/')
   })
 })
 router.post('/login',(req,res)=>{
+
   userHelpers.dologin(req.body).then((response)=>{
     if(response.status){
       req.session.loggedIn=true
@@ -55,8 +58,16 @@ router.post('/login',(req,res)=>{
     req.session.destroy()
     res.redirect('/')
   })
-  router.get('/cart',verifyLogin,(req,res)=>{
+  router.get('/cart',verifyLogin,async(req,res)=>{
+     let products=await userHelpers.getCartProducts(req.session.user._id)
+     console.log(products)
     res.render('user/cart')
+  })
+  router.get('/add-to-cart/:id',verifyLogin,(req,res)=>{
+    console.log(req.session.user)
+    userHelpers.addToCart(req.params.id,req.session.user._id).then(() =>{
+      res.redirect('/')
+    })
   })
 
 

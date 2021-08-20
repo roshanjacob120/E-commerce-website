@@ -1,7 +1,6 @@
 var db = require("../config/connection");
 const collection = require("../config/collection");
-var mongodb=require('mongodb').ObjectID;
-const { ObjectID } = require("bson");
+var objectId=require('mongodb').ObjectID;
 module.exports={
     addproduct:(product,callback)=>{
         db.get().collection('product').insertOne(product).then((data)=>{
@@ -16,7 +15,7 @@ module.exports={
     },
     deleteProduct:(proId)=>{
         return new Promise((resolve,reject)=>{
-            db.get().collection(collection.PRODUCT_COLLECTIONS).removeOne({_id:mongodb(proId)}).then((response)=>{
+            db.get().collection(collection.PRODUCT_COLLECTIONS).removeOne({_id:objectId(proId)}).then((response)=>{
                 resolve(response)
             })
 
@@ -24,14 +23,14 @@ module.exports={
 },
     getProduct:(proId)=>{
         return new Promise((resolve,reject)=>{
-            db.get().collection(collection.PRODUCT_COLLECTIONS).findOne({_id:mongodb(proId)}).then((response)=>{
+            db.get().collection(collection.PRODUCT_COLLECTIONS).findOne({_id:objectId(proId)}).then((response)=>{
                 resolve(response)
             })
         })
     },
     updateProduct:(proId,proDetails)=>{
         return new Promise((resolve,reject)=>{
-            db.get().collection(collection.PRODUCT_COLLECTIONS).updateOne({_id:ObjectID(proId)},{
+            db.get().collection(collection.PRODUCT_COLLECTIONS).updateOne({_id:objectId(proId)},{
                 $set:{
                 Name:proDetails.Name,
                 Description:proDetails.Description,

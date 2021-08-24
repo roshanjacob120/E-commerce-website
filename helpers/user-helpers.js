@@ -93,10 +93,20 @@ addToCart:(proId,userId)=>{
             ]).toArray()
             resolve(cartItems[0].cartItems);
         })
+    },
+    getcartCount:(userId)=>{
+              return new Promise(async(resolve,reject)=>{
+                  let count=0
+                  let cart=await db.get().collection(collection.CART_COLLECTIONS).findOne({user:objectId(userId)})
+                  if(cart){
+                      count=cart.products.length
+                  } 
+                  resolve(count)
     }
 
                        
-}                                                                                                                         
+              )}
+}                                                                                                                                   
 
 
 

@@ -43,24 +43,40 @@ const { ObjectID } = require("mongodb");
         })
     },
 addToCart:(proId,userId)=>{
+    let proObj={
+        item:objectId(proId),
+        quantity:1
+    }
     return new Promise(async(resolve, reject)=>{
         let usercart= await db.get().collection(collection.CART_COLLECTIONS).findOne({user:objectId(userId)})
         if(usercart){
+            let proExist=usercart.products.findIndex(product=> product.item==proId)
+            if(proExist!=-1){
+                db.get().collection(collection.CART_COLLECTIONS)
+                .updateOne({'products.item':objectId(proId)},
+                {
+                    $inc:{'products.$.quantity':1}
+                }).then(() =>{
+                    resolve()
+                })
+            }
+            else
+            {
            db.get().collection(collection.CART_COLLECTIONS)
            .updateOne({user:objectId(userId)},
            {
-               $push:{products:objectId(proId)}
+               $push:{products:proObj}
 
             }).then((response)=>{
                resolve()
             }
            )}
+        } 
         else
         {
             let cartObj={
                 user:objectId(userId),
-                products:[objectId(proId)]
-
+                products:[proObj]
             }
             db.get().collection(collection.CART_COLLECTIONS).insertOne(cartObj).then((response)=>{
                 resolve()
@@ -75,23 +91,26 @@ addToCart:(proId,userId)=>{
                    { 
                        $match:{user:objectId(userId)}
                    },
-                   {  $lookup:{
-                       from:collection.PRODUCT_COLLECTIONS,
-                       let:{prodList:'$products'},
-                       pipeline:[
-                           { 
-                               $match:{
-                                  $expr:{
-                                      $in:['$_id',"$$prodList"]
-                                  }
-                                }
-                            }
-                       ],
-                       as:'cartItems'
+                   {
+                       $unwind:'$products'
+                   },
+                   {
+                       $project:{
+                           item:'$products.item',
+                           quantity:'$products.quantity'
+                       }
+                   },
+                   {
+                       $lookup:{
+                           from:collection.PRODUCT_COLLECTIONS,
+                           localField:'item',
+                           foreignField:'_id',
+                           as:'product'
+                       }
                     }
-                }
             ]).toArray()
-            resolve(cartItems[0].cartItems);
+            console.log(cartItems)
+            resolve(cartItems);
         })
     },
     getcartCount:(userId)=>{

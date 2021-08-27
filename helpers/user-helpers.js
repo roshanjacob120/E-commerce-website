@@ -53,7 +53,7 @@ addToCart:(proId,userId)=>{
             let proExist=usercart.products.findIndex(product=> product.item==proId)
             if(proExist!=-1){
                 db.get().collection(collection.CART_COLLECTIONS)
-                .updateOne({'products.item':objectId(proId)},
+                .updateOne({user:objectId(userId),'products.item':objectId(proId)},
                 {
                     $inc:{'products.$.quantity':1}
                 }).then(() =>{
@@ -107,9 +107,13 @@ addToCart:(proId,userId)=>{
                            foreignField:'_id',
                            as:'product'
                        }
+                    },
+                    {
+                        $project:{
+                            item:1,quantity:1,product:{$arrayElemAt:['$product',0]}
+                        }
                     }
             ]).toArray()
-            console.log(cartItems)
             resolve(cartItems);
         })
     },
@@ -124,7 +128,72 @@ addToCart:(proId,userId)=>{
     }
 
                        
-              )}
+   )},
+   changeProductQuantity:(details)=>{
+       details.count=parseInt(details.count)
+       details.quantity=parseInt(details.quantity)
+       return new Promise((resolve,reject)=>{
+           if(details.quantity==1 && details.count==-1)
+           {
+            db.get().collection(collection.CART_COLLECTIONS)
+            .updateOne({_id:objectId(details.cart)},
+            {
+                $pull:{products:{item:objectId(details.product)}}
+            }).then((response) =>{
+                resolve({removeProduct:true})
+            })
+           }
+           else
+           {
+        db.get().collection(collection.CART_COLLECTIONS)
+        .updateOne({_id:objectId(details.cart),'products.item':objectId(details.product)},
+        {
+            $inc:{'products.$.quantity':details.count}
+        }).then(() =>{
+            resolve(true)
+        })
+    }
+       })
+   },
+   getTotalAmount:(userId)=>{
+    return new Promise(async(resolve, reject)=>{
+        let total=await db.get().collection(collection.CART_COLLECTIONS).aggregate([
+            { 
+                $match:{user:objectId(userId)}
+            },
+            {
+                $unwind:'$products'
+            },
+            {
+                $project:{
+                    item:'$products.item',
+                    quantity:'$products.quantity'
+                }
+            },
+            {
+                $lookup:{
+                    from:collection.PRODUCT_COLLECTIONS,
+                    localField:'item',
+                    foreignField:'_id',
+                    as:'product'
+                }
+             },
+             {
+                 $project:{
+                     item:1,quantity:1,product:{$arrayElemAt:['$product',0]}
+                 }
+             },
+             {
+                 $group:{
+                     _id:null,
+                     total:{$sum:{$multiply:[{$toInt:'$quantity'},{$toInt:'$product.Price'}]}}
+                 }
+             }
+     ]).toArray()
+     console.log(total[0].total)
+     resolve(total[0].total);
+ })
+   }
 }                                                                                                                                   
 
 

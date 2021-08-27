@@ -74,8 +74,16 @@ router.post('/login',(req,res)=>{
     userHelpers.addToCart(req.params.id,req.session.user._id).then(() =>{
       res.json({status:true})
     })
-      
-   
+  })
+  router.post('/change-product-quantity',(req,res,next)=>{
+    console.log(req.body)
+    userHelpers.changeProductQuantity(req.body).then((response) =>{
+       res.json(response)
+    })
+  })
+  router.get('/place-order',verifyLogin,async(req,res)=>{
+     let total=await userHelpers.getTotalAmount(req.session.user._id)
+     res.render('user/place-order',{total}) 
   })
 
 

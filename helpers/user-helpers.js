@@ -4,6 +4,11 @@ var objectId=require('mongodb').ObjectID;
 const collection = require("../config/collection");
 const userHelpers=require('../helpers/product-helpers')
 const bcrypt=require('bcrypt');
+const Razorpay = require('razorpay')
+var instance = new Razorpay({
+     key_id: 'rzp_test_x5ZZziCHkWJkm8',
+      key_secret: 'aKDyvVMwKr9TVi5XZqFYJh9E'
+     })
 const { ObjectID } = require("mongodb");
  module.exports={
     dosignup:(userData)=>{
@@ -24,7 +29,7 @@ const { ObjectID } = require("mongodb");
                bcrypt.compare(userData.Password,user.Password).then((status)=>{
                if(status)
                {
-                   console.log('Login success')
+                
                    response.user=user
                    response.status=true
                    resolve(response)
@@ -195,7 +200,6 @@ addToCart:(proId,userId)=>{
    },
    placeOrder:(order,products,total)=>{
        return new Promise(async(resolve, reject)=>{
-           console.log(order,products,total)
            let status =order['payment-method']==='COD'?'Placed':'pending'
            let orderObj={
                deliveryDetails:{
@@ -213,7 +217,7 @@ addToCart:(proId,userId)=>{
            }
            db.get().collection(collection.ORDER_COLLECTIONS).insertOne(orderObj).then((response)=>{
                db.get().collection(collection.CART_COLLECTIONS).removeOne({user:objectId(order.userId)})
-               resolve()
+               resolve(response.ops[0]._id)
            })
        })
    },
@@ -225,7 +229,7 @@ addToCart:(proId,userId)=>{
    },
    getUserOrders:(userId)=>{
        return new Promise(async(resolve, reject)=>{
-           console.log(userId)
+           
            let orders=await db.get().collection(collection.ORDER_COLLECTIONS)
            .find({userId:objectId(userId)}).toArray()
            resolve(orders)
@@ -263,6 +267,56 @@ addToCart:(proId,userId)=>{
      ]).toArray()
      resolve(orderItems);
  })
+   },
+   generateRazorpay:(orderId,total)=>{
+          return new Promise((resolve,reject)=>{
+            var options = {
+                amount: total*100,  // amount in the smallest currency unit
+                currency: "INR",
+                receipt: ""+orderId
+              };
+              instance.orders.create(options, function(err, order) {
+                  if(err)
+                  {
+                      console.log(err)
+                  }
+                  else{
+                resolve(order);
+                  }
+              });
+          })
+   },
+   verifyPayment:(details)=>{
+       return new Promise(async(resolve, reject)=>{
+        const {
+            createHmac
+          } = await import('crypto');
+          
+          let hmac = createHmac('sha256', 'aKDyvVMwKr9TVi5XZqFYJh9E');
+           hmac.update(details['payment[razorpay_order_id']+'|'+details['payment[razorpay_payment_id'])
+          hmac=hmac.digest('hex')
+          if(hmac=details['payment[razorpay_signature]']){
+              resolve()
+            }
+            else
+            {
+                reject()
+            }
+        })
+   },
+   changePaymentstatus:(orderId)=>{
+    
+       return new Promise((resolve, reject)=>{
+         db.get().collection(collection.ORDER_COLLECTIONS).updateOne({_id:objectId(orderId)},
+         {
+         $set:{
+               status:'Placed'
+              }
+        }
+         ).then(()=>{
+             resolve()
+         })
+       })
    }
 }                                                                                                                                   
 

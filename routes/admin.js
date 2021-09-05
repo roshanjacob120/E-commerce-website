@@ -36,14 +36,14 @@ router.get('/delete-product/:id',(req,res)=>{
 })
 router.get('/edit-products/:id',(req,res)=>{
   let proId=req.params.id
-  console.log(proId)
+  
   producthelpers.getProduct(proId).then((product)=>{
     res.render("admin/edit-products",{product})
   })
  
 })
 router.post('/edit-products/:id',(req,res)=>{
-     console.log(req.params.id)
+     
      producthelpers.updateProduct(req.params.id,req.body).then(()=>{
        res.redirect('/admin')
        if(req.files.Image)
